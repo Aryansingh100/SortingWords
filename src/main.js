@@ -21,6 +21,7 @@ function createCategoryBox(category) {
         140
     );
 
+    box.category = category;
 
     const background = new Rectangle({
         width: 220,
@@ -69,6 +70,37 @@ function createCategoryBox(category) {
     return box;
 }
 
+function getClosestSlot(
+    boxX,
+    boxPositions
+) {
+
+    let closestIndex = 0;
+
+    let smallestDistance = Infinity;
+
+
+    boxPositions.forEach(
+        (position, index) => {
+
+            const distance =
+                Math.abs(
+                    boxX - position
+                );
+
+            if (
+                distance < smallestDistance
+            ) {
+                smallestDistance = distance;
+                closestIndex = index;
+            }
+
+        }
+    );
+
+
+    return closestIndex;
+}
 
 function ready() {
 
@@ -97,13 +129,78 @@ function ready() {
     854
     ];
 
+    const categoryBoxes = [];
+
     categories.forEach((category, index) => {
+
     const box = createCategoryBox(category);
+
+    box.slotIndex = index;
+
     box
         .centerReg()
         .loc(
             boxPositions[index],
             620
         );
+
+    box.drag();
+
+box.on("pressup", () => {
+
+    const originalSlot =
+        box.slotIndex;
+
+
+    const targetSlot =
+        getClosestSlot(
+            box.x,
+            boxPositions
+        );
+
+
+    if (
+        targetSlot === originalSlot
+    ) {
+
+        box.loc(
+            boxPositions[originalSlot],
+            620
+        );
+
+        return;
+    }
+
+
+    const targetBox =
+        categoryBoxes.find(
+            otherBox =>
+                otherBox.slotIndex ===
+                targetSlot
+        );
+
+
+    targetBox.slotIndex =
+        originalSlot;
+
+    box.slotIndex =
+        targetSlot;
+
+
+    targetBox.loc(
+        boxPositions[originalSlot],
+        620
+    );
+
+
+    box.loc(
+        boxPositions[targetSlot],
+        620
+    );
+
+});
+
+    categoryBoxes.push(box);
+
     });
 }
