@@ -2,7 +2,8 @@ import "https://zimjs.org/cdn/020/zim";
 
 import {
     categories,
-    words
+    words,
+    difficultySettings
 } from "./data/GameData.js";
 
 new Frame(
@@ -265,18 +266,19 @@ function ready() {
     });
 
     // GAME SETTINGS
-    const POINTS_PER_CORRECT = 10;
-    const STARTING_LIVES = 3;
     const FEEDBACK_DELAY = 1000;
 
-    // GAME STATE
-    const roundWords = shuffleWords(words);
+    // Difficulty selection
+    let selectedDifficulty = "easy";
 
+    // The word list will be created when Play is clicked
+    let roundWords = [];
+
+    // Game state
     let currentWordIndex = 0;
     let score = 0;
-    let lives = STARTING_LIVES;
+    let lives = 3;
     let gameOver = false;
-
     let gameStarted = false;
 
     // Currently falling word
@@ -353,6 +355,54 @@ function ready() {
 
     instructions.centerReg().loc(512, 310, startScreen);
 
+    const difficultyButtons = {};
+
+    const difficultyOptions = [
+        { id: "easy", x: 260 },
+        { id: "medium", x: 512 },
+        { id: "hard", x: 764 }
+    ];
+
+    difficultyOptions.forEach(option => {
+
+        const button = new Button({
+            width: 190,
+            height: 65,
+            label: difficultySettings[option.id].name,
+            backgroundColor: "#ffffff",
+            rollBackgroundColor: "#dbeafe",
+            color: "#222222",
+            corner: 12
+        });
+
+        button.centerReg().loc(
+            option.x,
+            405,
+            startScreen
+        );
+
+        button.on("click", () => {
+            selectedDifficulty = option.id;
+            updateDifficultyButtons();
+        });
+
+        difficultyButtons[option.id] = button;
+    });
+
+    function updateDifficultyButtons() {
+
+        Object.entries(difficultyButtons).forEach(
+            ([id, button]) => {
+
+                button.color = id === selectedDifficulty
+                    ? "#2f5d8c"
+                    : "#222222";
+            }
+        );
+    }
+
+    updateDifficultyButtons();
+
     const playButton = new Button({
     width: 240,
     height: 75,
@@ -363,18 +413,46 @@ function ready() {
     corner: 15
     });
 
-    playButton.centerReg().loc(512, 420, startScreen);
+    playButton.centerReg().loc(512, 530, startScreen);
 
-    playButton.on("click", () => {
+    playButton.on("click", () => 
+    {
 
         if (gameStarted) {
             return;
         }
 
+        // Get settings for the selected difficulty
+        const settings = difficultySettings[selectedDifficulty];
+
+        // Filter words based on difficulty
+        const selectedWords = words.filter(
+            word => word.difficulty === selectedDifficulty
+        );
+
+        // Don't start an empty round
+        if (selectedWords.length === 0) {
+            console.error(
+                "No words found for difficulty:",
+                selectedDifficulty
+            );
+            return;
+        }
+
+        // Shuffle only the selected words
+        roundWords = shuffleWords(selectedWords);
+
+        // Reset game state
+        currentWordIndex = 0;
+        score = 0;
+        lives = settings.lives;
+        gameOver = false;
         gameStarted = true;
 
+        // Remove the start screen
         startScreen.removeFrom();
 
+        // Start the selected difficulty
         updateGameUI();
         spawnNextWord();
 
@@ -389,8 +467,7 @@ function ready() {
         livesLabel.text = `Lives: ${lives}`;
 
         progressLabel.text =
-            `Words: ${currentWordIndex} / ${roundWords.length}`;
-
+            `${difficultySettings[selectedDifficulty].name} | Words: ${currentWordIndex} / ${roundWords.length}`;
     }
 
     function removeActiveWord() 
@@ -487,7 +564,7 @@ function ready() {
         }
 
         if (isCorrect) {
-            score += POINTS_PER_CORRECT;
+            score += difficultySettings[selectedDifficulty].points;;
 
             feedbackLabel.text = "Correct!";
             feedbackLabel.color = "#16803c";
@@ -613,7 +690,7 @@ function ready() {
         props: {
             y: 700
         },
-        time: 5,
+        time: difficultySettings[selectedDifficulty].fallTime,
         ease: "linear",
 
         call: () => {
