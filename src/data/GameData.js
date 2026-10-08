@@ -1,3 +1,24 @@
+export const categories = [
+    {
+        id: "animals",
+        name: "Animals",
+        sanskritName: "पशवः",
+        icon: "🐾"
+    },
+    {
+        id: "family",
+        name: "Family",
+        sanskritName: "परिवारः",
+        icon: "👨‍👩‍👧"
+    },
+    {
+        id: "places",
+        name: "Places",
+        sanskritName: "स्थानानि",
+        icon: "🏫"
+    }
+];
+
 export const words = [
     // EASY
     {
