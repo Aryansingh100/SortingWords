@@ -56,7 +56,7 @@ export const words = [
     {
         id: 8,
         word: "पितामहः",
-        meaning: "Paternal Grandfather",
+        meaning: "Paternal grandfather",
         categoryId: "family",
         difficulty: "hard"
     },
@@ -68,3 +68,24 @@ export const words = [
         difficulty: "hard"
     }
 ];
+
+export const difficultySettings = {
+    easy: {
+        name: "Easy",
+        fallTime: 8,
+        points: 10,
+        lives: 3
+    },
+    medium: {
+        name: "Medium",
+        fallTime: 5,
+        points: 20,
+        lives: 3
+    },
+    hard: {
+        name: "Hard",
+        fallTime: 3,
+        points: 30,
+        lives: 3
+    }
+};
