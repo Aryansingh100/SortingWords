@@ -202,61 +202,63 @@ function ready() {
             620
         );
 
-    box.drag();
+    let dragOffsetX = 0;
 
-box.on("pressup", () => {
+    box.on("mousedown", (event) => {
 
-    const originalSlot =
-        box.slotIndex;
+        dragOffsetX = box.x - event.stageX;
 
+    });
 
-    const targetSlot =
-        getClosestSlot(
+    box.on("pressmove", (event) => {
+
+        box.x = event.stageX + dragOffsetX;
+
+    });
+
+    box.on("pressup", () => {
+
+        const originalSlot = box.slotIndex;
+
+        const targetSlot = getClosestSlot(
             box.x,
             boxPositions
         );
 
+        if (targetSlot === originalSlot) {
 
-    if (
-        targetSlot === originalSlot
-    ) {
+            box.loc(
+                boxPositions[originalSlot],
+                620
+            );
 
-        box.loc(
+            return;
+        }
+
+        const targetBox = categoryBoxes.find(
+            otherBox => otherBox.slotIndex === targetSlot
+        );
+
+        if (!targetBox) {
+            return;
+        }
+
+        // Exchange the slot indices
+        targetBox.slotIndex = originalSlot;
+        box.slotIndex = targetSlot;
+
+        // Move both boxes to their new slots
+        targetBox.loc(
             boxPositions[originalSlot],
             620
         );
 
-        return;
-    }
-
-
-    const targetBox =
-        categoryBoxes.find(
-            otherBox =>
-                otherBox.slotIndex ===
-                targetSlot
+        box.loc(
+            boxPositions[targetSlot],
+            620
         );
 
-
-    targetBox.slotIndex =
-        originalSlot;
-
-    box.slotIndex =
-        targetSlot;
-
-
-    targetBox.loc(
-        boxPositions[originalSlot],
-        620
-    );
-
-
-    box.loc(
-        boxPositions[targetSlot],
-        620
-    );
-
-});
+    });
 
     categoryBoxes.push(box);
 
@@ -274,6 +276,8 @@ box.on("pressup", () => {
     let score = 0;
     let lives = STARTING_LIVES;
     let gameOver = false;
+
+    let gameStarted = false;
 
     // Currently falling word
     let activeWord = null;
@@ -321,6 +325,61 @@ box.on("pressup", () => {
         .centerReg()
         .loc(512, 105);
 
+    const startScreen = new Container(1024, 768);
+    startScreen.addTo();
+
+    const playButton = new Button({
+    width: 240,
+    height: 75,
+    label: "Play Game",
+    backgroundColor: "#2f5d8c",
+    rollBackgroundColor: "#23496d",
+    color: white,
+    corner: 15
+    });
+
+    playButton.centerReg().loc(512, 420, startScreen);
+
+    playButton.on("click", () => {
+
+        if (gameStarted) {
+            return;
+        }
+
+        gameStarted = true;
+
+        startScreen.removeFrom();
+
+        updateGameUI();
+        spawnNextWord();
+
+    });
+
+    const startBackground = new Rectangle({
+        width: 1024,
+        height: 768,
+        color: "#bde7f0"
+    });
+
+    startBackground.addTo(startScreen);
+
+    const startTitle = new Label({
+        text: "Sanskrit Word Sort",
+        size: 55,
+        color: "#2f5d8c",
+        bold: true
+    });
+
+    startTitle.centerReg().loc(512, 220, startScreen);
+
+    const instructions = new Label({
+        text: "Move the correct category box to catch each falling Sanskrit word!",
+        size: 23,
+        color: "#333333"
+    });
+
+    instructions.centerReg().loc(512, 310, startScreen);
+
     function updateGameUI() 
     {
 
@@ -357,25 +416,41 @@ box.on("pressup", () => {
 
     function endGame() 
     {
+
         gameOver = true;
 
         removeActiveWord();
 
         feedbackLabel.text = "";
 
+        const endScreen = new Container(1024, 768);
+        endScreen.addTo();
+
+        const overlay = new Rectangle({
+            width: 1024,
+            height: 768,
+            color: "rgba(0, 0, 0, 0.55)"
+        });
+
+        overlay.addTo(endScreen);
+
+        const panel = new Rectangle({
+            width: 550,
+            height: 400,
+            color: "#ffffff",
+            corner: 25
+        });
+
+        panel.centerReg().loc(512, 380, endScreen);
+
         const finalMessage = new Label({
-            text: lives <= 0
-                ? "Game Over!"
-                : "Round Complete!",
-            size: 48,
+            text: lives <= 0 ? "Game Over!" : "Round Complete!",
+            size: 46,
             color: "#2f5d8c",
             bold: true
         });
 
-        finalMessage
-            .centerReg()
-            .loc(512, 290);
-
+        finalMessage.centerReg().loc(512, 280, endScreen);
 
         const finalScore = new Label({
             text: `Final Score: ${score}`,
@@ -383,9 +458,24 @@ box.on("pressup", () => {
             color: "#222222"
         });
 
-        finalScore
-            .centerReg()
-            .loc(512, 355);
+        finalScore.centerReg().loc(512, 360, endScreen);
+
+        const restartButton = new Button({
+            width: 230,
+            height: 65,
+            label: "Play Again",
+            backgroundColor: "#16803c",
+            rollBackgroundColor: "#12632f",
+            color: white,
+            corner: 12
+        });
+
+        restartButton.centerReg().loc(512, 460, endScreen);
+
+        restartButton.on("click", () => {
+            window.location.reload();
+        });
+
     }
 
     function finishWord(isCorrect, missed = false) 
@@ -538,8 +628,4 @@ box.on("pressup", () => {
         }
     });
     }
-
-    updateGameUI();
-
-    spawnNextWord();
 }
