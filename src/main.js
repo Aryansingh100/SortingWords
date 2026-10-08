@@ -17,11 +17,15 @@ new Frame(
 function createCategoryBox(category) {
 
     const box = new Container(
-        220,
-        140
-    );
+    220,
+    140
+);
 
-    box.category = category;
+box.category = category;
+
+// Treat the whole box as one interactive object
+box.mouseChildren = false;
+box.mouseEnabled = true;
 
     const background = new Rectangle({
         width: 220,
@@ -34,6 +38,12 @@ function createCategoryBox(category) {
 
     background.addTo(box);
 
+    box.setBounds(0, 0, 220, 140);
+
+    box.hitArea = new createjs.Shape();
+    box.hitArea.graphics
+    .beginFill("#000")
+    .drawRect(0, 0, 220, 140);
 
     const icon = new Label({
         text: category.icon,
@@ -100,6 +110,38 @@ function getClosestSlot(
 
 
     return closestIndex;
+}
+
+function createFallingWord(wordData) {
+
+    const word = new Label({
+        text: wordData.word,
+        size: 36,
+        color: "#222222",
+        bold: true,
+        backgroundColor: "#ffffff",
+        backgroundBorderColor: "#306b9b",
+        backgroundBorderWidth: 3,
+        corner: 12,
+        padding: 15
+    });
+
+    // Remember which word this object represents
+    word.wordData = wordData;
+
+    // The falling word should not be draggable
+    word.mouseEnabled = false;
+
+    return word;
+}
+
+function getRandomWord(wordList) {
+
+    const randomIndex = Math.floor(
+        Math.random() * wordList.length
+    );
+
+    return wordList[randomIndex];
 }
 
 function ready() {
@@ -203,4 +245,41 @@ box.on("pressup", () => {
     categoryBoxes.push(box);
 
     });
+
+    // Select a random Sanskrit word
+    const selectedWord = getRandomWord(words);
+
+    // Select one of the three lanes
+    const randomLane = Math.floor(
+    Math.random() * boxPositions.length
+);
+
+    // Create the ZIM word object
+    const fallingWord = createFallingWord(selectedWord);
+
+    // Place the word at the top of its lane
+    fallingWord
+    .centerReg()
+    .loc(
+        boxPositions[randomLane],
+        140
+    );
+
+    // Animate downward
+    fallingWord.animate
+    (
+        {
+        props: {
+            y: 500
+        },
+        time: 4,
+        ease: "linear",
+        call: () => {
+            console.log("Word reached the bottom");
+            console.log("Word:", selectedWord.word);
+            console.log("Category:", selectedWord.categoryId);
+            console.log("Lane:", randomLane);
+        }
+        }
+    );
 }
