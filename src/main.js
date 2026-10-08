@@ -389,16 +389,18 @@ function ready() {
         difficultyButtons[option.id] = button;
     });
 
-    function updateDifficultyButtons() {
+    function updateDifficultyButtons() 
+    {
+        Object.entries(difficultyButtons).forEach(([id, button]) => {
+            const selected = id === selectedDifficulty;
 
-        Object.entries(difficultyButtons).forEach(
-            ([id, button]) => {
+            button.color = selected ? "#2f5d8c" : "#222222";
 
-                button.color = id === selectedDifficulty
-                    ? "#2f5d8c"
-                    : "#222222";
+            if (button.label && typeof button.label !== "string") {
+                button.label.color = selected ? "#2f5d8c" : "#222222";
             }
-        );
+        });
+        stage.update();
     }
 
     updateDifficultyButtons();
@@ -564,7 +566,7 @@ function ready() {
         }
 
         if (isCorrect) {
-            score += difficultySettings[selectedDifficulty].points;;
+            score += difficultySettings[selectedDifficulty].points;
 
             feedbackLabel.text = "Correct!";
             feedbackLabel.color = "#16803c";
