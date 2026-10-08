@@ -112,6 +112,14 @@ function getClosestSlot(
     return closestIndex;
 }
 
+function findCollidingBox(fallingWord, categoryBoxes) {
+
+    return categoryBoxes.find(box => {
+        return fallingWord.hitTestBounds(box);
+    });
+
+}
+
 function createFallingWord(wordData) {
 
     const word = new Label({
@@ -246,6 +254,46 @@ box.on("pressup", () => {
 
     });
 
+    const feedbackLabel = new Label({
+    text: "",
+    size: 36,
+    bold: true,
+    color: "#222222"
+    });
+
+    feedbackLabel
+    .centerReg()
+    .loc(512, 115);
+
+    function checkAnswer(fallingWord, hitBox) 
+    {
+        const wordCategory =
+            fallingWord.wordData.categoryId;
+
+        const boxCategory =
+            hitBox.category.id;
+
+        const isCorrect =
+            wordCategory === boxCategory;
+
+        if (isCorrect) {
+
+            feedbackLabel.text = "Correct!";
+            feedbackLabel.color = "#16803c";
+
+        } else {
+
+            feedbackLabel.text = "Incorrect!";
+            feedbackLabel.color = "#dc2626";
+
+        }
+
+        console.log("Word:", fallingWord.wordData.word);
+        console.log("Expected:", wordCategory);
+        console.log("Caught by:", boxCategory);
+        console.log("Correct:", isCorrect);
+    }
+
     // Select a random Sanskrit word
     const selectedWord = getRandomWord(words);
 
@@ -266,20 +314,58 @@ box.on("pressup", () => {
     );
 
     // Animate downward
+    let collisionHandled = false;
+
+function checkCollision() {
+
+    if (collisionHandled) {
+        return;
+    }
+
+    const hitBox = findCollidingBox(
+        fallingWord,
+        categoryBoxes
+    );
+
+    if (!hitBox) {
+        return;
+    }
+
+    collisionHandled = true;
+
+    // Stop the word immediately upon contact
+    fallingWord.stopAnimate();
+
+    // Stop checking for collisions
+    Ticker.remove(checkCollision);
+
+    // Evaluate the category
+    checkAnswer(fallingWord, hitBox);
+}
+
+    // Check for collisions every frame
+    Ticker.add(checkCollision);
+
+    // Animate the word through the box area
     fallingWord.animate
-    (
-        {
+    ({
         props: {
-            y: 500
+            y: 700
         },
-        time: 4,
+        time: 5,
         ease: "linear",
         call: () => {
-            console.log("Word reached the bottom");
-            console.log("Word:", selectedWord.word);
-            console.log("Category:", selectedWord.categoryId);
-            console.log("Lane:", randomLane);
+
+            if (collisionHandled) {
+                return;
+            }
+
+            // Fallback if the word reaches the bottom without touching a category box
+            Ticker.remove(checkCollision);
+
+            feedbackLabel.text = "Missed!";
+            feedbackLabel.color = "#dc2626";
+
         }
-        }
-    );
+    });
 }
