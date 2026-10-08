@@ -328,6 +328,31 @@ function ready() {
     const startScreen = new Container(1024, 768);
     startScreen.addTo();
 
+    const startBackground = new Rectangle({
+        width: 1024,
+        height: 768,
+        color: "#bde7f0"
+    });
+
+    startBackground.addTo(startScreen);
+
+    const startTitle = new Label({
+        text: "Sanskrit Word Sort",
+        size: 55,
+        color: "#2f5d8c",
+        bold: true
+    });
+
+    startTitle.centerReg().loc(512, 220, startScreen);
+
+    const instructions = new Label({
+        text: "Move the correct category box to catch each falling Sanskrit word!",
+        size: 23,
+        color: "#333333"
+    });
+
+    instructions.centerReg().loc(512, 310, startScreen);
+
     const playButton = new Button({
     width: 240,
     height: 75,
@@ -355,30 +380,6 @@ function ready() {
 
     });
 
-    const startBackground = new Rectangle({
-        width: 1024,
-        height: 768,
-        color: "#bde7f0"
-    });
-
-    startBackground.addTo(startScreen);
-
-    const startTitle = new Label({
-        text: "Sanskrit Word Sort",
-        size: 55,
-        color: "#2f5d8c",
-        bold: true
-    });
-
-    startTitle.centerReg().loc(512, 220, startScreen);
-
-    const instructions = new Label({
-        text: "Move the correct category box to catch each falling Sanskrit word!",
-        size: 23,
-        color: "#333333"
-    });
-
-    instructions.centerReg().loc(512, 310, startScreen);
 
     function updateGameUI() 
     {
