@@ -143,13 +143,21 @@ function createFallingWord(wordData) {
     return word;
 }
 
-function getRandomWord(wordList) {
+function shuffleWords(wordList) {
 
-    const randomIndex = Math.floor(
-        Math.random() * wordList.length
-    );
+    const shuffled = [...wordList];
 
-    return wordList[randomIndex];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+
+        const randomIndex = Math.floor(
+            Math.random() * (i + 1)
+        );
+
+        [shuffled[i], shuffled[randomIndex]] =
+            [shuffled[randomIndex], shuffled[i]];
+    }
+
+    return shuffled;
 }
 
 function ready() {
@@ -254,6 +262,25 @@ box.on("pressup", () => {
 
     });
 
+    // GAME SETTINGS
+    const POINTS_PER_CORRECT = 10;
+    const STARTING_LIVES = 3;
+    const FEEDBACK_DELAY = 1000;
+
+    // GAME STATE
+    const roundWords = shuffleWords(words);
+
+    let currentWordIndex = 0;
+    let score = 0;
+    let lives = STARTING_LIVES;
+    let gameOver = false;
+
+    // Currently falling word
+    let activeWord = null;
+
+    // Current collision listener
+    let activeCollisionCheck = null;
+
     const feedbackLabel = new Label({
     text: "",
     size: 36,
@@ -263,109 +290,256 @@ box.on("pressup", () => {
 
     feedbackLabel
     .centerReg()
-    .loc(512, 115);
+    .loc(512, 190);
 
-    function checkAnswer(fallingWord, hitBox) 
+    const scoreLabel = new Label({
+    text: "Score: 0",
+    size: 25,
+    color: "#222222",
+    bold: true
+    });
+
+    scoreLabel.loc(40, 25);
+
+    const livesLabel = new Label({
+        text: "Lives: 3",
+        size: 25,
+        color: "#dc2626",
+        bold: true
+    });
+
+    livesLabel.loc(850, 25);
+
+
+    const progressLabel = new Label({
+        text: `Words: 0 / ${roundWords.length}`,
+        size: 22,
+        color: "#333333"
+    });
+
+    progressLabel
+        .centerReg()
+        .loc(512, 105);
+
+    function updateGameUI() 
     {
-        const wordCategory =
-            fallingWord.wordData.categoryId;
 
-        const boxCategory =
-            hitBox.category.id;
+        scoreLabel.text = `Score: ${score}`;
 
-        const isCorrect =
-            wordCategory === boxCategory;
+        livesLabel.text = `Lives: ${lives}`;
+
+        progressLabel.text =
+            `Words: ${currentWordIndex} / ${roundWords.length}`;
+
+    }
+
+    function removeActiveWord() 
+    {
+
+        // Remove the collision listener
+        if (activeCollisionCheck) {
+
+            Ticker.remove(activeCollisionCheck);
+
+            activeCollisionCheck = null;
+        }
+
+        // Remove the current word from the stage
+        if (activeWord) {
+
+            activeWord.stopAnimate();
+
+            activeWord.removeFrom();
+
+            activeWord = null;
+        }
+    }
+
+    function endGame() 
+    {
+        gameOver = true;
+
+        removeActiveWord();
+
+        feedbackLabel.text = "";
+
+        const finalMessage = new Label({
+            text: lives <= 0
+                ? "Game Over!"
+                : "Round Complete!",
+            size: 48,
+            color: "#2f5d8c",
+            bold: true
+        });
+
+        finalMessage
+            .centerReg()
+            .loc(512, 290);
+
+
+        const finalScore = new Label({
+            text: `Final Score: ${score}`,
+            size: 32,
+            color: "#222222"
+        });
+
+        finalScore
+            .centerReg()
+            .loc(512, 355);
+    }
+
+    function finishWord(isCorrect, missed = false) 
+    {
+
+        if (gameOver) {
+            return;
+        }
 
         if (isCorrect) {
+            score += POINTS_PER_CORRECT;
 
             feedbackLabel.text = "Correct!";
             feedbackLabel.color = "#16803c";
-
         } else {
+            lives--;
 
-            feedbackLabel.text = "Incorrect!";
+            feedbackLabel.text = missed
+                ? "Missed!"
+                : "Incorrect!";
+
             feedbackLabel.color = "#dc2626";
-
         }
 
-        console.log("Word:", fallingWord.wordData.word);
-        console.log("Expected:", wordCategory);
-        console.log("Caught by:", boxCategory);
-        console.log("Correct:", isCorrect);
+        removeActiveWord();
+
+        updateGameUI();
+
+        setTimeout(() => {
+
+            if (
+                lives <= 0 ||
+                currentWordIndex >= roundWords.length
+            ) {
+                endGame();
+            } else {
+                feedbackLabel.text = "";
+                spawnNextWord();
+            }
+
+        }, FEEDBACK_DELAY);
     }
 
     // Select a random Sanskrit word
-    const selectedWord = getRandomWord(words);
+    function spawnNextWord() 
+    {
 
-    // Select one of the three lanes
+    if (gameOver) {
+        return;
+    }
+
+    // No more words left
+    if (currentWordIndex >= roundWords.length) {
+
+        endGame();
+        return;
+    }
+
+    // Get the next unused word
+    const selectedWord =
+        roundWords[currentWordIndex];
+
+    currentWordIndex++;
+
+    // Choose a random falling lane
     const randomLane = Math.floor(
-    Math.random() * boxPositions.length
-);
-
-    // Create the ZIM word object
-    const fallingWord = createFallingWord(selectedWord);
-
-    // Place the word at the top of its lane
-    fallingWord
-    .centerReg()
-    .loc(
-        boxPositions[randomLane],
-        140
+        Math.random() * boxPositions.length
     );
 
-    // Animate downward
+    // Create the falling word
+    const fallingWord =
+        createFallingWord(selectedWord);
+
+    fallingWord
+        .centerReg()
+        .loc(
+            boxPositions[randomLane],
+            140
+        );
+
+    // Store the current word
+    activeWord = fallingWord;
+
     let collisionHandled = false;
 
-function checkCollision() {
+    // Check collisions while the word falls
+    function checkCollision() {
 
-    if (collisionHandled) {
-        return;
+        if (collisionHandled || gameOver) {
+            return;
+        }
+
+        const hitBox = findCollidingBox(
+            fallingWord,
+            categoryBoxes
+        );
+
+        if (!hitBox) {
+            return;
+        }
+
+        collisionHandled = true;
+
+        // Compare the word and box categories
+        const isCorrect =
+            fallingWord.wordData.categoryId ===
+            hitBox.category.id;
+
+        console.log(
+            "Word:",
+            fallingWord.wordData.word
+        );
+
+        console.log(
+            "Expected:",
+            fallingWord.wordData.categoryId
+        );
+
+        console.log(
+            "Caught by:",
+            hitBox.category.id
+        );
+
+        finishWord(isCorrect);
     }
 
-    const hitBox = findCollidingBox(
-        fallingWord,
-        categoryBoxes
-    );
+    // Store the listener so we can remove it later
+    activeCollisionCheck = checkCollision;
 
-    if (!hitBox) {
-        return;
-    }
-
-    collisionHandled = true;
-
-    // Stop the word immediately upon contact
-    fallingWord.stopAnimate();
-
-    // Stop checking for collisions
-    Ticker.remove(checkCollision);
-
-    // Evaluate the category
-    checkAnswer(fallingWord, hitBox);
-}
-
-    // Check for collisions every frame
     Ticker.add(checkCollision);
 
-    // Animate the word through the box area
-    fallingWord.animate
-    ({
+    // Start falling
+    fallingWord.animate({
         props: {
             y: 700
         },
         time: 5,
         ease: "linear",
+
         call: () => {
 
-            if (collisionHandled) {
+            if (collisionHandled || gameOver) {
                 return;
             }
 
-            // Fallback if the word reaches the bottom without touching a category box
-            Ticker.remove(checkCollision);
+            collisionHandled = true;
 
-            feedbackLabel.text = "Missed!";
-            feedbackLabel.color = "#dc2626";
-
+            // No category box was touched
+            finishWord(false, true);
         }
     });
+    }
+
+    updateGameUI();
+
+    spawnNextWord();
 }
