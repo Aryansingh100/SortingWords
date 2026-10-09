@@ -392,15 +392,16 @@ function ready() {
     function updateDifficultyButtons() 
     {
         Object.entries(difficultyButtons).forEach(([id, button]) => {
+
             const selected = id === selectedDifficulty;
 
-            button.color = selected ? "#2f5d8c" : "#222222";
-
             if (button.label && typeof button.label !== "string") {
-                button.label.color = selected ? "#2f5d8c" : "#222222";
+                button.label.color = selected
+                    ? "#2f5d8c"
+                    : "#222222";
             }
         });
-        stage.update();
+
     }
 
     updateDifficultyButtons();
