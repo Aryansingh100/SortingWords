@@ -16,6 +16,65 @@
 </head>
 
 <body>
+    <div id="authModal" class="auth-modal" hidden>
+        <div class="auth-panel">
+            <button id="closeAuth" class="auth-close" type="button">×</button>
+
+            <h2>Sign in to Zatam</h2>
+            <p>Use your Zatam account or continue playing as a guest.</p>
+
+            <p id="authMessage" class="auth-message" role="status"></p>
+
+            <button id="googleLogin" type="button">
+                Continue with Google
+            </button>
+
+            <div class="auth-divider">OR USE EMAIL</div>
+
+            <form id="authForm">
+                <input
+                    id="authName"
+                    type="text"
+                    placeholder="Username"
+                    autocomplete="name"
+                    maxlength="30"
+                    hidden
+                >
+
+                <input
+                    id="authEmail"
+                    type="email"
+                    placeholder="Email"
+                    autocomplete="email"
+                    required
+                >
+
+                <input
+                    id="authPassword"
+                    type="password"
+                    placeholder="Password"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <button id="authSubmit" type="submit">
+                    Sign In
+                </button>
+            </form>
+
+            <button id="switchAuthMode" type="button">
+                Create an account
+            </button>
+
+            <button id="forgotPassword" type="button">
+                Forgot password?
+            </button>
+
+            <button id="continueGuest" type="button">
+                Continue as Guest
+            </button>
+        </div>
+    </div>
 
     <script
         type="module"
