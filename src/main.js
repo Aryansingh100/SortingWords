@@ -551,9 +551,11 @@ function ready() {
         feedbackLabel.text = "";
 
         const endScreen = new Container(1024, 768);
-        endScreen.addTo(stage);
+        endScreen.addTo();
         endScreen.top();
-        console.log("End screen:", endScreen.parent, endScreen.visible);
+        console.log("End screen parent:", endScreen.parent);
+        console.log("End screen index:", endScreen.parent.getChildIndex(endScreen));
+        console.log("Total children:", endScreen.parent.numChildren);
 
         const overlay = new Rectangle({
             width: 1024,
@@ -606,7 +608,9 @@ function ready() {
             window.location.reload();
         });
 
-        stage.update();
+        Ticker.add(() => {
+        endScreen.stage?.update();
+        });
 
     }
 
