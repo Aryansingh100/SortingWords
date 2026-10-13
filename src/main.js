@@ -4,6 +4,10 @@ import {
     difficultySettings
 } from "./data/GameData.js";
 
+import { openAuthModal } from "./auth/AuthUI.js";
+import { auth } from "./auth/firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 new Frame(
     FIT,
     1024,
@@ -328,6 +332,43 @@ function ready() {
     const startScreen = new Container(1024, 768);
     startScreen.addTo();
 
+    const accountButton = new Button({
+    width: 180,
+    height: 50,
+    label: "Sign In",
+    backgroundColor: "#2f5d8c",
+    rollBackgroundColor: "#23496d",
+    color: white,
+    corner: 12
+    });
+
+    accountButton.loc(815, 20, startScreen);
+
+    accountButton.on("click", async () => {
+        if (auth.currentUser) {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Sign out failed:", error);
+            }
+        } else {
+            openAuthModal();
+        }
+    });
+
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            const playerName =
+                user.displayName ||
+                user.email?.split("@")[0] ||
+                "Player";
+
+            accountButton.label.text = playerName;
+        } else {
+            accountButton.label.text = "Sign In";
+        }
+    });
+
     const startBackground = new Rectangle({
         width: 1024,
         height: 768,
@@ -335,6 +376,8 @@ function ready() {
     });
 
     startBackground.addTo(startScreen);
+
+    accountButton.top();
 
     const startTitle = new Label({
         text: "Sanskrit Word Sort",
@@ -499,6 +542,7 @@ function ready() {
 
     function endGame() 
     {
+        console.log("END GAME CALLED", { score, lives, currentWordIndex });
 
         gameOver = true;
 
@@ -507,7 +551,9 @@ function ready() {
         feedbackLabel.text = "";
 
         const endScreen = new Container(1024, 768);
-        endScreen.addTo();
+        endScreen.addTo(stage);
+        endScreen.top();
+        console.log("End screen:", endScreen.parent, endScreen.visible);
 
         const overlay = new Rectangle({
             width: 1024,
@@ -554,10 +600,13 @@ function ready() {
         });
 
         restartButton.centerReg().loc(512, 460, endScreen);
+        restartButton.top();
 
         restartButton.on("click", () => {
             window.location.reload();
         });
+
+        stage.update();
 
     }
 

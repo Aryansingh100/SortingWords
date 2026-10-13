@@ -1,0 +1,24 @@
+{
+  "name": "sortingwords",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aryansingh100/SortingWords.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Aryansingh100/SortingWords/issues"
+  },
+  "homepage": "https://github.com/Aryansingh100/SortingWords#readme",
+  "dependencies": {
+    "zimjs": "^20.1.3"
+  }
+}
