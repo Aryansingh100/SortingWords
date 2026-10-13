@@ -1,20 +1,8 @@
-import "https://zimjs.org/cdn/020/zim";
-
 import {
     categories,
     words,
     difficultySettings
 } from "./data/GameData.js";
-
-import {
-    observeUser,
-    getPlayerName,
-    logout
-} from "./auth/AuthService.js";
-
-import {
-    openAuthModal
-} from "./auth/AuthUI.js";
 
 new Frame(
     FIT,
@@ -348,53 +336,6 @@ function ready() {
 
     startBackground.addTo(startScreen);
 
-    // =======================================
-    // ZATAM LOGIN STATUS
-    // =======================================
-
-    const userLabel = new Label({
-        text: "Playing as Guest",
-        size: 20,
-        color: "#2f5d8c",
-        bold: true
-    });
-
-    userLabel.centerReg().loc(512, 120, startScreen);
-
-    const loginButton = new Button({
-        width: 200,
-        height: 50,
-        label: "Sign In",
-        backgroundColor: "#2f5d8c",
-        rollBackgroundColor: "#23496d",
-        color: white,
-        corner: 12
-    });
-
-    loginButton.centerReg().loc(512, 660, startScreen);
-
-    loginButton.on("click", async () => {
-        if (loginButton.label.text === "Logout") {
-            try {
-                await logout();
-            } catch (error) {
-                console.error("Logout failed:", error);
-            }
-        } else {
-            openAuthModal();
-        }
-    });
-
-    observeUser(user => {
-        if (user) {
-            userLabel.text = `Welcome, ${getPlayerName(user)}!`;
-            loginButton.label.text = "Logout";
-        } else {
-            userLabel.text = "Playing as Guest";
-            loginButton.label.text = "Sign In";
-        }
-    });
-
     const startTitle = new Label({
         text: "Sanskrit Word Sort",
         size: 55,
@@ -501,6 +442,10 @@ function ready() {
 
         // Shuffle only the selected words
         roundWords = shuffleWords(selectedWords);
+
+        console.log("Selected difficulty:", selectedDifficulty);
+    console.log("Total words loaded:", roundWords.length);
+    console.log("Words:", roundWords);
 
         // Reset game state
         currentWordIndex = 0;
@@ -684,8 +629,10 @@ function ready() {
     );
 
     // Create the falling word
-    const fallingWord =
-        createFallingWord(selectedWord);
+    const fallingWord = createFallingWord(selectedWord);
+
+    // Add the word to the ZIM canvas
+    fallingWord.addTo();
 
     fallingWord
         .centerReg()
@@ -693,6 +640,8 @@ function ready() {
             boxPositions[randomLane],
             140
         );
+
+    console.log("Spawning:", selectedWord.word);
 
     // Store the current word
     activeWord = fallingWord;
