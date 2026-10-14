@@ -13,10 +13,10 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 // ===============================
 
 const sounds = {
-    start: new Audio("./assets/sounds/start.mp3"),
-    correct: new Audio("./assets/sounds/correct.mp3"),
-    wrong: new Audio("./assets/sounds/wrong.mp3"),
-    gameover: new Audio("./assets/sounds/gameover.mp3")
+    start: new Audio("./src/assets/sounds/start.mp3"),
+    correct: new Audio("./src/assets/sounds/correct.mp3"),
+    wrong: new Audio("./src/assets/sounds/incorrect.mp3"),
+    gameover: new Audio("./src/assets/sounds/gameover.mp3")
 };
 
 // Set sound volume
