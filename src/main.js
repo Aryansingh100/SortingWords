@@ -8,6 +8,36 @@ import { openAuthModal } from "./auth/AuthUI.js";
 import { auth } from "./auth/firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+// ===============================
+// SOUND EFFECTS
+// ===============================
+
+const sounds = {
+    start: new Audio("./assets/sounds/start.mp3"),
+    correct: new Audio("./assets/sounds/correct.mp3"),
+    wrong: new Audio("./assets/sounds/wrong.mp3"),
+    gameover: new Audio("./assets/sounds/gameover.mp3")
+};
+
+// Set sound volume
+Object.values(sounds).forEach(sound => {
+    sound.volume = 0.5;
+});
+
+// Play a sound effect
+function playSound(soundName) {
+    const sound = sounds[soundName];
+
+    if (!sound) return;
+
+    sound.pause();
+    sound.currentTime = 0;
+
+    sound.play().catch(error => {
+        console.warn("Sound could not play:", error);
+    });
+}
+
 new Frame(
     FIT,
     1024,
@@ -496,6 +526,7 @@ function ready() {
         lives = settings.lives;
         gameOver = false;
         gameStarted = true;
+        playSound("start");
 
         // Remove the start screen
         startScreen.removeFrom();
@@ -545,6 +576,7 @@ function ready() {
         console.log("END GAME CALLED", { score, lives, currentWordIndex });
 
         gameOver = true;
+        playSound("gameover");
 
         removeActiveWord();
 
@@ -624,10 +656,15 @@ function ready() {
         if (isCorrect) {
             score += difficultySettings[selectedDifficulty].points;
 
+            playSound("correct");
+
             feedbackLabel.text = "Correct!";
             feedbackLabel.color = "#16803c";
+
         } else {
             lives--;
+
+            playSound("wrong");
 
             feedbackLabel.text = missed
                 ? "Missed!"
