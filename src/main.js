@@ -215,8 +215,8 @@ function ready() {
 
         // Fill the entire 1024 x 768 canvas without empty borders
         const scale = Math.max(
-            1024 / imageWidth,
-            768 / imageHeight
+            1200 / imageWidth,
+            1000 / imageHeight
         );
 
         gameplayBackground.scaleX = scale;
@@ -258,6 +258,22 @@ function ready() {
 
     const categoryBoxes = [];
 
+    // Translucent preview showing the destination of a dragged box
+    const swapPreview = new Rectangle({
+        width: 230,
+        height: 150,
+        color: "rgba(59, 130, 246, 0.18)",
+        borderColor: "#3b82f6",
+        borderWidth: 4,
+        corner: 18
+    });
+
+    swapPreview.centerReg();
+    swapPreview.visible = false;
+    swapPreview.mouseEnabled = false;
+    swapPreview.mouseChildren = false;
+    swapPreview.addTo();
+
     categories.forEach((category, index) => {
 
     const box = createCategoryBox(category);
@@ -272,20 +288,51 @@ function ready() {
         );
 
     let dragOffsetX = 0;
+    let isSwapping = false;
 
     box.on("mousedown", (event) => {
+        if (isSwapping) return;
 
         dragOffsetX = box.x - event.stageX;
 
+        box.top();
+
+        // Show the translucent destination preview
+        swapPreview.visible = true;
+        swapPreview.loc(
+            boxPositions[box.slotIndex],
+            620
+        );
+
+        swapPreview.top();
+        box.top();
     });
 
     box.on("pressmove", (event) => {
+        if (isSwapping) return;
 
         box.x = event.stageX + dragOffsetX;
 
+        // Find the nearest slot while dragging
+        const targetSlot = getClosestSlot(
+            box.x,
+            boxPositions
+        );
+
+        // Move the preview to the potential destination
+        swapPreview.loc(
+            boxPositions[targetSlot],
+            620
+        );
+
+        swapPreview.visible = true;
+
+        // Keep the dragged box above the preview
+        box.top();
     });
 
     box.on("pressup", () => {
+        if (isSwapping) return;
 
         const originalSlot = box.slotIndex;
 
@@ -294,12 +341,17 @@ function ready() {
             boxPositions
         );
 
-        if (targetSlot === originalSlot) {
+        swapPreview.visible = false;
 
-            box.loc(
-                boxPositions[originalSlot],
-                620
-            );
+        // If released in the original slot, snap back smoothly
+        if (targetSlot === originalSlot) {
+            box.animate({
+                props: {
+                    x: boxPositions[originalSlot]
+                },
+                time: 0.25,
+                ease: "backOut"
+            });
 
             return;
         }
@@ -308,25 +360,34 @@ function ready() {
             otherBox => otherBox.slotIndex === targetSlot
         );
 
-        if (!targetBox) {
-            return;
-        }
+        if (!targetBox) return;
 
-        // Exchange the slot indices
+        isSwapping = true;
+
+        // Update the slot ownership
         targetBox.slotIndex = originalSlot;
         box.slotIndex = targetSlot;
 
-        // Move both boxes to their new slots
-        targetBox.loc(
-            boxPositions[originalSlot],
-            620
-        );
+        // Animate the other box to the original slot
+        targetBox.animate({
+            props: {
+                x: boxPositions[originalSlot]
+            },
+            time: 0.35,
+            ease: "quadInOut"
+        });
 
-        box.loc(
-            boxPositions[targetSlot],
-            620
-        );
-
+        // Animate the dragged box into the destination slot
+        box.animate({
+            props: {
+                x: boxPositions[targetSlot]
+            },
+            time: 0.35,
+            ease: "quadInOut",
+            call: () => {
+                isSwapping = false;
+            }
+        });
     });
 
     categoryBoxes.push(box);
@@ -602,13 +663,6 @@ function ready() {
 
         // Remove the start screen
         startScreen.removeFrom();
-
-        startScreen.removeFrom();
-
-        // Move the account button onto the gameplay canvas
-        accountButton.addTo();
-        accountButton.loc(770, 15);
-        accountButton.top();
 
         // Start the selected difficulty
         updateGameUI();
