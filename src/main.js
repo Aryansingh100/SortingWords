@@ -195,13 +195,41 @@ function shuffleWords(wordList) {
 
 function ready() {
 
+    // Fallback background while the image loads
     const background = new Rectangle({
-    width: 1024,
-    height: 768,
-    color: "#dff5e3"
+        width: 1024,
+        height: 768,
+        color: "#dff5e3"
     });
 
     background.addTo();
+
+    // Nature background for the gameplay screen
+    const gameplayImage = new Image();
+
+    gameplayImage.onload = () => {
+        const gameplayBackground = new createjs.Bitmap(gameplayImage);
+
+        gameplayBackground.scaleX =
+            1024 / gameplayImage.naturalWidth;
+
+        gameplayBackground.scaleY =
+            768 / gameplayImage.naturalHeight;
+
+        // Put the image above the green background
+        // but behind the score, words, and category boxes
+        background.parent.addChildAt(gameplayBackground, 1);
+
+        background.getStage()?.update();
+
+        console.log("Gameplay nature background loaded!");
+    };
+
+    gameplayImage.onerror = () => {
+        console.error("Gameplay background failed to load");
+    };
+
+    gameplayImage.src = "./src/assets/images/nature-bg.jpg";
 
     const title = new Label({
     text: "Sanskrit Word Sort",
@@ -416,24 +444,30 @@ function ready() {
 
     startBackground.addTo(startScreen);
 
-    // Load the nature pixel-art image
-    const natureBackground = new Pic("assets/images/nature-bg.png");
+    // Load the nature background image
+    const natureImage = new Image();
 
-    natureBackground.on("ready", () => {
-        natureBackground
-            .sca(
-                1024 / natureBackground.width,
-                768 / natureBackground.height
-            )
-            .addTo(startScreen);
+    natureImage.onload = () => {
+    const natureBackground = new createjs.Bitmap(natureImage);
 
-        // Keep the image behind the menu controls
-        startScreen.setChildIndex(natureBackground, 1);
+    // Fill the game canvas
+    natureBackground.scaleX = 1024 / natureImage.naturalWidth;
+    natureBackground.scaleY = 768 / natureImage.naturalHeight;
 
-        accountButton.top();
+    // Place above the solid background, behind all buttons
+    startScreen.addChildAt(natureBackground, 1);
 
-        natureBackground.stage?.update();
-    });
+    // Refresh the canvas
+    startScreen.getStage()?.update();
+
+    console.log("Nature background loaded successfully!");
+    };
+
+    natureImage.onerror = () => {
+        console.error("Failed to load nature background image");
+    };
+
+    natureImage.src = "./src/assets/images/nature-bg.jpg";
 
     const startTitle = new Label({
         text: "Sanskrit Word Sort",
