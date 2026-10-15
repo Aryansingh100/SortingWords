@@ -250,6 +250,177 @@ function ready() {
     .centerReg()
     .loc(512, 60);
 
+    function createWoodenBox(box, category) {
+
+        // Dark interior gives the appearance of an open crate
+        const opening = new Rectangle({
+            width: 215,
+            height: 35,
+            color: "#49301f",
+            corner: 12
+        });
+
+        opening.loc(7, 5, box);
+
+        // Wooden crate body
+        const body = new Rectangle({
+            width: 230,
+            height: 115,
+            color: "#b87939",
+            borderColor: "#70431f",
+            borderWidth: 4,
+            corner: 12
+        });
+
+        body.loc(0, 35, box);
+
+        // Wooden plank details
+        [75, 112].forEach(y => {
+            new Rectangle({
+                width: 220,
+                height: 4,
+                color: "#8a542a"
+            }).loc(5, y, box);
+        });
+
+        // Side supports
+        [12, 207].forEach(x => {
+            new Rectangle({
+                width: 11,
+                height: 105,
+                color: "#e0a35b",
+                corner: 3
+            }).loc(x, 40, box);
+        });
+
+        // Category label plate
+        const plate = new Rectangle({
+            width: 155,
+            height: 85,
+            color: "#f8e9c7",
+            borderColor: "#86572d",
+            borderWidth: 2,
+            corner: 10
+        });
+
+        plate.loc(38, 51, box);
+
+        new Label({
+            text: category.icon,
+            size: 24
+        }).centerReg().loc(115, 70, box);
+
+        new Label({
+            text: category.sanskritName,
+            size: 26,
+            color: "#382719"
+        }).centerReg().loc(115, 101, box);
+
+        new Label({
+            text: category.name,
+            size: 15,
+            color: "#74553a"
+        }).centerReg().loc(115, 124, box);
+    }
+
+    // =====================================
+    // CORRECT ANSWER ANIMATION
+    // =====================================
+
+    function playCorrectAnimation(box) {
+
+        // Small bounce when the crate catches a word
+        box.animate({
+            props: {
+                scaleX: 1.08,
+                scaleY: 0.92
+            },
+            time: 0.12,
+            ease: "quadOut",
+            call: () => {
+                box.animate({
+                    props: {
+                        scaleX: 1,
+                        scaleY: 1
+                    },
+                    time: 0.22,
+                    ease: "backOut"
+                });
+            }
+        });
+
+        // Golden sparkle particles
+        for (let i = 0; i < 12; i++) {
+
+            const sparkle = new Circle({
+                radius: 5,
+                color: i % 2 === 0
+                    ? "#FFD700"
+                    : "#FFF4A3"
+            });
+
+            sparkle.addTo();
+
+            sparkle.loc(box.x, box.y - 35);
+
+            sparkle.mouseEnabled = false;
+
+            const angle = (Math.PI * 2 * i) / 12;
+            const distance = 45 + Math.random() * 65;
+
+            sparkle.animate({
+                props: {
+                    x: sparkle.x + Math.cos(angle) * distance,
+                    y: sparkle.y + Math.sin(angle) * distance,
+                    alpha: 0
+                },
+                time: 0.5,
+                ease: "quadOut",
+                call: () => {
+                    sparkle.removeFrom();
+                }
+            });
+        }
+    }
+
+    // =====================================
+    // INCORRECT ANSWER ANIMATION
+    // =====================================
+
+    function playIncorrectAnimation(word, onComplete) {
+
+        // Send the word toward the nearest screen edge
+        const direction = word.x < 512 ? -1 : 1;
+
+        // Stop the falling animation before rejecting the word
+        word.stopAnimate();
+
+        // First, bounce upward from the crate
+        word.animate({
+            props: {
+                y: word.y - 110,
+                rotation: direction * 18
+            },
+            time: 0.25,
+            ease: "quadOut",
+            call: () => {
+
+                // Then throw it off the screen
+                word.animate({
+                    props: {
+                        x: direction < 0 ? -200 : 1224,
+                        y: word.y + 140,
+                        rotation: direction * 65,
+                        alpha: 0
+                    },
+                    time: 0.45,
+                    ease: "quadIn",
+                    call: onComplete
+                });
+            }
+        });
+    }
+
     const boxPositions = [
     170,
     512,
@@ -276,9 +447,28 @@ function ready() {
 
     categories.forEach((category, index) => {
 
-    const box = createCategoryBox(category);
+    const box = new Container(230, 150);
+
+    box.category = category;
+
+    // Treat the whole crate as one draggable object
+    box.mouseChildren = false;
+    box.mouseEnabled = true;
+
+    // Draw the wooden crate
+    createWoodenBox(box, category);
+
+    // Set the crate's collision and interaction bounds
+    box.setBounds(0, 0, 230, 150);
+
+    box.hitArea = new createjs.Shape();
+    box.hitArea.graphics
+        .beginFill("#000")
+        .drawRect(0, 0, 230, 150);
 
     box.slotIndex = index;
+
+    box.addTo();
 
     box
         .centerReg()
@@ -779,14 +969,30 @@ function ready() {
 
     }
 
-    function finishWord(isCorrect, missed = false) 
-    {
+    function finishWord(
+    isCorrect,
+    missed = false,
+    hitBox = null
+    ) {
 
-        if (gameOver) {
-            return;
+        if (gameOver) return;
+
+        // Stop collision detection immediately
+        if (activeCollisionCheck) {
+            Ticker.remove(activeCollisionCheck);
+            activeCollisionCheck = null;
+        }
+
+        // Keep a reference to the falling word
+        const wordToAnimate = activeWord;
+
+        // Stop its downward animation
+        if (wordToAnimate) {
+            wordToAnimate.stopAnimate();
         }
 
         if (isCorrect) {
+
             score += difficultySettings[selectedDifficulty].points;
 
             playSound("correct");
@@ -794,7 +1000,12 @@ function ready() {
             feedbackLabel.text = "Correct!";
             feedbackLabel.color = "#16803c";
 
+            if (hitBox) {
+                playCorrectAnimation(hitBox);
+            }
+
         } else {
+
             lives--;
 
             playSound("wrong");
@@ -806,11 +1017,18 @@ function ready() {
             feedbackLabel.color = "#dc2626";
         }
 
-        removeActiveWord();
-
         updateGameUI();
 
-        setTimeout(() => {
+        // Clean up and continue to the next word
+        const continueGame = () => {
+
+            if (wordToAnimate) {
+                wordToAnimate.removeFrom();
+            }
+
+            if (activeWord === wordToAnimate) {
+                activeWord = null;
+            }
 
             if (
                 lives <= 0 ||
@@ -821,8 +1039,20 @@ function ready() {
                 feedbackLabel.text = "";
                 spawnNextWord();
             }
+        };
 
-        }, FEEDBACK_DELAY);
+        // Wrong category: bounce and fly away
+        if (!isCorrect && !missed && wordToAnimate) {
+
+            playIncorrectAnimation(wordToAnimate, () => {
+                setTimeout(continueGame, 300);
+            });
+
+        } else {
+
+            // Correct answer or missed word
+            setTimeout(continueGame, 850);
+        }
     }
 
     // Select a random Sanskrit word
@@ -909,7 +1139,7 @@ function ready() {
             hitBox.category.id
         );
 
-        finishWord(isCorrect);
+        finishWord(isCorrect, false, hitBox);
     }
 
     // Store the listener so we can remove it later
