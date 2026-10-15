@@ -195,11 +195,11 @@ function shuffleWords(wordList) {
 
 function ready() {
 
-    const background = new Rectangle(
-    1024,
-    768,
-    "#bde7f0"
-    );
+    const background = new Rectangle({
+    width: 1024,
+    height: 768,
+    color: "#dff5e3"
+    });
 
     background.addTo();
 
@@ -363,16 +363,16 @@ function ready() {
     startScreen.addTo();
 
     const accountButton = new Button({
-    width: 180,
-    height: 50,
+    width: 200,
+    height: 55,
     label: "Sign In",
     backgroundColor: "#2f5d8c",
     rollBackgroundColor: "#23496d",
     color: white,
-    corner: 12
+    corner: 15
     });
 
-    accountButton.loc(815, 20, startScreen);
+    accountButton.loc(770, 15, startScreen);
 
     accountButton.on("click", async () => {
         if (auth.currentUser) {
@@ -387,27 +387,53 @@ function ready() {
     });
 
     onAuthStateChanged(auth, user => {
-        if (user) {
-            const playerName =
-                user.displayName ||
-                user.email?.split("@")[0] ||
-                "Player";
+    if (user) {
+        const playerName =
+            user.displayName ||
+            user.email?.split("@")[0] ||
+            "Player";
 
-            accountButton.label.text = playerName;
-        } else {
-            accountButton.label.text = "Sign In";
-        }
+        const maxLength = 18;
+
+        accountButton.label.text =
+            playerName.length > maxLength
+                ? playerName.substring(0, maxLength - 3) + "..."
+                : playerName;
+
+        accountButton.label.size = 20;
+    } else {
+        accountButton.label.text = "Sign In";
+        accountButton.label.size = 22;
+    }
     });
 
+        // Solid background prevents gameplay from showing through
     const startBackground = new Rectangle({
         width: 1024,
         height: 768,
-        color: "#bde7f0"
+        color: "#b8e4f0"
     });
 
     startBackground.addTo(startScreen);
 
-    accountButton.top();
+    // Load the nature pixel-art image
+    const natureBackground = new Pic("assets/images/nature-bg.png");
+
+    natureBackground.on("ready", () => {
+        natureBackground
+            .sca(
+                1024 / natureBackground.width,
+                768 / natureBackground.height
+            )
+            .addTo(startScreen);
+
+        // Keep the image behind the menu controls
+        startScreen.setChildIndex(natureBackground, 1);
+
+        accountButton.top();
+
+        natureBackground.stage?.update();
+    });
 
     const startTitle = new Label({
         text: "Sanskrit Word Sort",
