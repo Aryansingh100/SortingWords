@@ -210,26 +210,34 @@ function ready() {
     gameplayImage.onload = () => {
         const gameplayBackground = new createjs.Bitmap(gameplayImage);
 
-        gameplayBackground.scaleX =
-            1024 / gameplayImage.naturalWidth;
+        const imageWidth = gameplayImage.naturalWidth;
+        const imageHeight = gameplayImage.naturalHeight;
 
-        gameplayBackground.scaleY =
-            768 / gameplayImage.naturalHeight;
+        // Fill the entire 1024 x 768 canvas without empty borders
+        const scale = Math.max(
+            1024 / imageWidth,
+            768 / imageHeight
+        );
 
-        // Put the image above the green background
-        // but behind the score, words, and category boxes
+        gameplayBackground.scaleX = scale;
+        gameplayBackground.scaleY = scale;
+
+        // Center the image and crop any overflow
+        gameplayBackground.x = (1024 - imageWidth * scale) / 2;
+        gameplayBackground.y = (768 - imageHeight * scale) / 2;
+
         background.parent.addChildAt(gameplayBackground, 1);
 
         background.getStage()?.update();
 
-        console.log("Gameplay nature background loaded!");
+        console.log("Gameplay background loaded!");
     };
 
     gameplayImage.onerror = () => {
         console.error("Gameplay background failed to load");
     };
 
-    gameplayImage.src = "./src/assets/images/nature-bg.jpg";
+    gameplayImage.src = "./src/assets/images/game-bg.jpg";
 
     const title = new Label({
     text: "Sanskrit Word Sort",
@@ -444,6 +452,8 @@ function ready() {
 
     startBackground.addTo(startScreen);
 
+    accountButton.top();
+
     // Load the nature background image
     const natureImage = new Image();
 
@@ -456,6 +466,8 @@ function ready() {
 
     // Place above the solid background, behind all buttons
     startScreen.addChildAt(natureBackground, 1);
+
+    accountButton.top();
 
     // Refresh the canvas
     startScreen.getStage()?.update();
@@ -590,6 +602,13 @@ function ready() {
 
         // Remove the start screen
         startScreen.removeFrom();
+
+        startScreen.removeFrom();
+
+        // Move the account button onto the gameplay canvas
+        accountButton.addTo();
+        accountButton.loc(770, 15);
+        accountButton.top();
 
         // Start the selected difficulty
         updateGameUI();
